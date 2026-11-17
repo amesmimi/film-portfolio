@@ -1,0 +1,142 @@
+/* ————————————————————————————————————————————————
+   After Dark — the night-time theme.
+   Switched on by <html data-theme="night">.
+   Every rule starts with html[data-theme='night'] so it
+   always wins over the daytime (and component) styles.
+   ———————————————————————————————————————————————— */
+
+html[data-theme='night'] {
+  color-scheme: dark;
+
+  --parchment: #14121c;       /* midnight: the page */
+  --parchment-deep: #2a2238;
+  --page: #221d2e;            /* plum dusk: book pages & cards */
+  --print-white: #221d2e;
+  --print-cream: #e4dac2;     /* prints laid out under the moon */
+  --ink: #ece3cc;             /* moonlight: text & lines */
+  --ink-soft: #b9af98;
+  --night: #0e0c14;           /* the darkroom */
+  --night-deep: #08070c;
+  --toadstool: #e08a5f;       /* ember */
+  --moss: #8fa584;
+  --lake: #9db4c8;
+  --honey: #e6c46a;           /* moon gold */
+  --honey-light: #e6c46a;
+  --rosehip: #5a4258;
+  --lavender: #b8a9d9;
+
+  --tone-sage: #3d4a3a;
+  --tone-peach: #574a3c;
+  --tone-blue: #3b4a58;
+  --tone-ochre: #5a4e36;
+  --tone-rose: #5a4258;
+  --tone-moss: #4a4560;
+
+  --accent: var(--honey);
+  --note: var(--lavender);
+  --ring: rgba(184, 169, 217, 0.55);
+  --leaf: #3d4a3a;
+  --rule-soft: rgba(236, 227, 204, 0.18);
+  --shadow-print: 0 14px 30px rgba(0, 0, 0, 0.5);
+}
+
+/* the starry sky */
+html[data-theme='night'] body {
+  background-color: var(--parchment);
+  background-image:
+    radial-gradient(1px 1px at 22px 34px, #ece3cc, transparent),
+    radial-gradient(1px 1px at 148px 86px, rgba(236, 227, 204, 0.6), transparent),
+    radial-gradient(1.6px 1.6px at 268px 168px, #e6c46a, transparent),
+    radial-gradient(1px 1px at 92px 214px, rgba(184, 169, 217, 0.8), transparent),
+    radial-gradient(1px 1px at 326px 42px, rgba(236, 227, 204, 0.5), transparent),
+    radial-gradient(1.2px 1.2px at 200px 250px, rgba(236, 227, 204, 0.7), transparent);
+  background-size: 360px 280px;
+  background-position: 0 0;
+}
+
+/* a soft fade when the switch is flipped */
+html.theme-fading body,
+html.theme-fading body * {
+  transition: background-color 0.6s ease, color 0.6s ease, border-color 0.6s ease !important;
+}
+
+/* show/hide helpers */
+html[data-theme='night'] .day-only { display: none !important; }
+html:not([data-theme='night']) .night-only { display: none !important; }
+
+/* buttons glow like lanterns */
+html[data-theme='night'] .btn {
+  background: var(--accent); color: var(--parchment);
+  box-shadow: 0 0 30px rgba(230, 196, 106, 0.28);
+}
+html[data-theme='night'] .btn:hover { color: var(--parchment); box-shadow: 0 0 40px rgba(230, 196, 106, 0.45); }
+html[data-theme='night'] .btn svg path { stroke: var(--parchment); }
+html[data-theme='night'] h1 em { text-shadow: 0 0 28px rgba(230, 196, 106, 0.35); }
+
+/* header */
+html[data-theme='night'] .header.compact { border-bottom-color: var(--rule-soft); }
+
+/* cover window */
+html[data-theme='night'] .hero__window .frame--arch {
+  border-color: rgba(236, 227, 204, 0.7);
+  box-shadow: 0 0 0 6px rgba(20, 18, 28, 0.6), 0 0 70px rgba(230, 196, 106, 0.14);
+}
+html[data-theme='night'] .tag { border-color: rgba(236, 227, 204, 0.7); box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4); }
+
+/* contents */
+html[data-theme='night'] .leader { border-bottom-color: rgba(184, 169, 217, 0.45); }
+
+/* the open book, by candlelight */
+html[data-theme='night'] .spread {
+  border-color: rgba(236, 227, 204, 0.35);
+  box-shadow:
+    0 2px 0 #2a2238, 0 6px 0 rgba(236, 227, 204, 0.25), 0 10px 0 #2a2238, 0 14px 0 rgba(236, 227, 204, 0.2),
+    0 0 90px rgba(230, 196, 106, 0.1), 0 30px 60px rgba(0, 0, 0, 0.5);
+}
+html[data-theme='night'] .spread .page:first-child { border-right-color: var(--rule-soft); }
+
+/* frames */
+html[data-theme='night'] .frame--arch,
+html[data-theme='night'] .frame--oval,
+html[data-theme='night'] .frame--round { border-color: rgba(236, 227, 204, 0.7); }
+html[data-theme='night'] .frame--plate { border-color: rgba(236, 227, 204, 0.6); outline-color: rgba(236, 227, 204, 0.6); }
+html[data-theme='night'] .frame--polaroid,
+html[data-theme='night'] .frame--snapshot { background: var(--print-cream); border-color: transparent; }
+html[data-theme='night'] .frame--stamp,
+html[data-theme='night'] .stamp {
+  background:
+    radial-gradient(circle at 8px 8px, var(--parchment) 5px, transparent 5.6px) -8px -8px / 16px 16px,
+    var(--print-cream);
+}
+html[data-theme='night'] .frame--stamp { filter: drop-shadow(0 10px 18px rgba(0, 0, 0, 0.5)); }
+html[data-theme='night'] .frame--stamp .frame__window { border-color: #2a2238; }
+html[data-theme='night'] .frame--album { border: 1px solid var(--rule-soft); }
+html[data-theme='night'] .corner { background: var(--honey); }
+
+/* the darkroom */
+html[data-theme='night'] .darkroom {
+  background: var(--night); color: var(--ink);
+  border-top: 1px solid rgba(236, 227, 204, 0.12); border-bottom: 1px solid rgba(236, 227, 204, 0.12);
+}
+html[data-theme='night'] .darkroom a { color: var(--ink); }
+html[data-theme='night'] .darkroom a:hover { color: var(--honey); }
+html[data-theme='night'] .darkroom .honey { color: var(--accent); }
+html[data-theme='night'] .darkroom .carrying { color: var(--note); }
+html[data-theme='night'] .portrait__mat { border-color: rgba(236, 227, 204, 0.7); box-shadow: 0 0 60px rgba(230, 196, 106, 0.12); }
+
+/* postcard */
+html[data-theme='night'] .postcard { border-color: rgba(236, 227, 204, 0.45); box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45); }
+html[data-theme='night'] .postcard__message { border-color: rgba(236, 227, 204, 0.3); }
+html[data-theme='night'] .postcard textarea {
+  background: repeating-linear-gradient(transparent 0 39px, rgba(184, 169, 217, 0.28) 39px 40px);
+}
+html[data-theme='night'] .postcard textarea::placeholder { color: rgba(184, 169, 217, 0.7); }
+html[data-theme='night'] .postcard .field { color: var(--ink-soft); }
+html[data-theme='night'] .postcard .field input { border-bottom-color: rgba(236, 227, 204, 0.6); }
+html[data-theme='night'] .postcard .btn { box-shadow: 0 0 24px rgba(230, 196, 106, 0.25); }
+html[data-theme='night'] .postcard .status { color: var(--note); }
+
+/* film strip */
+html[data-theme='night'] .sprockets {
+  background: repeating-linear-gradient(90deg, transparent 0 10px, rgba(236, 227, 204, 0.55) 10px 22px, transparent 22px 34px);
+}

@@ -1,0 +1,51 @@
+---
+interface Props {
+  roll: {
+    number?: string;
+    camera?: string;
+    lens?: string;
+    film?: string;
+    developed?: string;
+    shot?: string;
+  };
+  fallbackNumber: number;
+}
+const { roll, fallbackNumber } = Astro.props;
+const rows = [
+  ['Camera', roll.camera],
+  ['Lens', roll.lens],
+  ['Film', roll.film],
+  ['Developed', roll.developed],
+  ['Shot', roll.shot],
+].filter(([, v]) => v);
+const label = roll.number ?? String(fallbackNumber).padStart(2, '0');
+---
+{rows.length > 0 && (
+  <aside class="card" aria-label="Roll details">
+    <div class="card__head">Roll No. {label}</div>
+    <dl>
+      {rows.map(([k, v]) => (
+        <div><dt>{k}</dt><dd>{v}</dd></div>
+      ))}
+    </dl>
+  </aside>
+)}
+
+<style>
+  .card {
+    flex: 0 1 330px; min-width: 0; margin: 0 auto; background: var(--print-white);
+    border: 1.5px solid var(--ink); padding: 22px 24px 18px;
+    transform: rotate(1.5deg); box-shadow: var(--shadow-print);
+  }
+  .card__head {
+    font-family: var(--font-caps); font-size: 18px; letter-spacing: 0.18em; text-align: center;
+    padding-bottom: 10px; border-bottom: 2px solid var(--accent);
+  }
+  dl { margin: 0; font-family: var(--font-type); font-size: 16px; line-height: 1.4; }
+  dl div {
+    display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+    padding: 9px 0; border-bottom: 1px solid rgba(70, 99, 122, 0.4);
+  }
+  dl div:last-child { border-bottom: none; }
+  dd { margin: 0; font-family: var(--font-hand); font-size: 22px; text-align: right; }
+</style>

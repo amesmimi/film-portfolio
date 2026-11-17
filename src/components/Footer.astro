@@ -1,0 +1,32 @@
+---
+import Ornament from './Ornament.astro';
+import { site, url } from '../site.config';
+const year = new Date().getFullYear();
+const home = url();
+---
+<footer class="footer">
+  <Ornament name="crescent" class="night-only" />
+  <svg class="day-only" width="160" height="40" viewBox="0 0 160 40" fill="none" stroke="var(--ink)" stroke-width="1.3" stroke-linecap="round" aria-hidden="true"><path d="M4 20q36-16 76 0 40 16 76 0" /><path d="M80 8l2 10 10 2-10 2-2 10-2-10-10-2 10-2z" fill="var(--honey)" stroke="none" /><path d="M40 13q2-8 10-8-2 7-10 8zM120 27q-2 8-10 8 2-7 10-8z" fill="var(--tone-sage)" /></svg>
+  <p class="end">The End</p>
+  <p class="hand"><span class="day-only">…until the next roll is developed.</span><span class="night-only">…sleep well; the next roll is drying.</span></p>
+  <nav aria-label="Footer">
+    <a href={`${home}#contents`}>Contents</a>
+    {site.links.instagram && <a href={site.links.instagram} rel="me">Instagram</a>}
+    {site.links.stocksy && <a href={site.links.stocksy}>Stocksy</a>}
+    <a href={`${home}#letters`}>Letters</a>
+  </nav>
+  <p class="small">© {year} {site.name}</p>
+</footer>
+
+<style>
+  .footer { padding: 40px 24px 56px; text-align: center; }
+  .end { margin: 12px 0 18px; font-family: var(--font-display); font-style: italic; font-size: 60px; line-height: 1; }
+  .hand { margin: 0; font-size: 24px; }
+  :global(html[data-theme='night']) .hand { color: var(--note); }
+  nav {
+    display: flex; flex-wrap: wrap; justify-content: center; gap: 0 28px; margin-top: 18px;
+    font-family: var(--font-caps); font-size: 17px; letter-spacing: 0.14em;
+  }
+  nav a { padding: 10px 0; }
+  .small { margin: 18px 0 0; font-size: 15px; color: var(--ink-soft); }
+</style>

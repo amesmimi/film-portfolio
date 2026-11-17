@@ -1,0 +1,62 @@
+---
+// The secret switch: the little sun (by day) or moon (after dark) beside the name.
+interface Props { size?: number }
+const { size = 42 } = Astro.props;
+---
+<button class="theme-toggle" type="button" aria-label="Switch to after dark" style={`--size:${size}px`}>
+  <!-- sun, by day -->
+  <svg class="icon icon--sun day-only" viewBox="0 0 42 42" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+    <circle cx="21" cy="21" r="8" fill="var(--honey)" fill-opacity="0.35" />
+    <path d="M21 4v5M21 33v5M4 21h5M33 21h5M9 9l3.5 3.5M29.5 29.5L33 33M9 33l3.5-3.5M29.5 12.5L33 9" />  </svg>
+  <!-- moon, after dark -->
+  <svg class="icon icon--moon night-only" viewBox="0 0 42 42" fill="none" stroke="var(--ink)" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+    <path d="M26 5a16 16 0 1 0 11 27A13 13 0 0 1 26 5z" fill="rgba(230,196,106,.18)" />
+    <path d="M33 9l1 3 3 1-3 1-1 3-1-3-3-1 3-1z" fill="var(--honey)" stroke="none" />
+  </svg>
+</button>
+
+<script>
+  const root = document.documentElement;
+  const meta = document.querySelector('meta[name="theme-color"]');
+  const buttons = document.querySelectorAll<HTMLButtonElement>('.theme-toggle');
+
+  function apply(theme: 'day' | 'night', fade = false) {
+    if (fade && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      root.classList.add('theme-fading');
+      window.setTimeout(() => root.classList.remove('theme-fading'), 700);
+    }
+    root.dataset.theme = theme;
+    meta?.setAttribute('content', theme === 'night' ? '#14121c' : '#f3ead3');
+    for (const b of buttons) {
+      b.setAttribute('aria-label', theme === 'night' ? 'Switch to daylight' : 'Switch to after dark');
+    }
+  }
+
+  apply(root.dataset.theme === 'night' ? 'night' : 'day');
+
+  for (const b of buttons) {
+    b.addEventListener('click', () => {
+      const next = root.dataset.theme === 'night' ? 'day' : 'night';
+      try { localStorage.setItem('theme', next); } catch {}
+      apply(next, true);
+    });
+  }
+</script>
+
+<style>
+  .theme-toggle {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: max(var(--size), 44px); height: max(var(--size), 44px);
+    margin: 0 -2px 0 -4px; padding: 0; border: none; border-radius: 50%;
+    background: transparent; color: inherit; cursor: pointer;
+  }
+  .icon { width: var(--size); height: var(--size); transition: transform 0.6s ease, filter 0.4s ease; }
+  .theme-toggle:hover .icon--sun,
+  .theme-toggle:focus-visible .icon--sun { transform: rotate(45deg); filter: drop-shadow(0 0 6px rgba(201, 150, 43, 0.45)); }
+  .theme-toggle:hover .icon--moon,
+  .theme-toggle:focus-visible .icon--moon { transform: rotate(-14deg); filter: drop-shadow(0 0 8px rgba(230, 196, 106, 0.55)); }
+  .theme-toggle:active .icon { transform: scale(0.9); }
+  @media (prefers-reduced-motion: reduce) {
+    .icon { transition: none; }
+  }
+</style>

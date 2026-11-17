@@ -1,0 +1,42 @@
+---
+import ThemeToggle from './ThemeToggle.astro';
+import { site, url } from '../site.config';
+
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+const home = url();
+---
+<header class:list={['header wrap', { compact }]}>
+  <div class="brand">
+    <ThemeToggle size={compact ? 32 : 42} />
+    <a href={home} class="brand__name">{site.name}</a>
+  </div>
+  <nav aria-label="Main">
+    <ul>
+      <li><a href={`${home}#contents`}>Contents</a></li>
+      <li><a href={`${home}#plates`}>Plates</a></li>
+      <li><a href={`${home}#darkroom`}>The Darkroom</a></li>
+      <li><a href={`${home}#letters`}>Send a Letter</a></li>
+    </ul>
+  </nav>
+</header>
+
+<style>
+  .header {
+    padding-top: 28px; padding-bottom: 8px;
+    display: flex; flex-wrap: wrap; gap: 8px 40px; align-items: center; justify-content: space-between;
+  }
+  .header.compact { padding-bottom: 20px; border-bottom: 1px solid rgba(59, 42, 30, 0.25); }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand__name {
+    font-family: var(--font-caps); font-size: 30px; letter-spacing: 0.04em; line-height: 1;
+    text-decoration: none; color: var(--ink); padding: 8px 0;
+  }
+  .compact .brand__name { font-size: 24px; }
+  ul {
+    list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 0 30px;
+    font-family: var(--font-display); font-style: italic; font-size: 21px;
+  }
+  ul a { text-decoration: none; display: inline-block; padding: 10px 0; }
+  ul a:hover { text-decoration: underline; }
+</style>

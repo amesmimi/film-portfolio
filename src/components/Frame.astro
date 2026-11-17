@@ -1,0 +1,123 @@
+---
+// A photograph in one of the storybook frames. With no `image`, it draws a
+// tinted placeholder so the layout still reads while photos are on their way.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+export type FrameShape = 'arch' | 'oval' | 'round' | 'stamp' | 'polaroid' | 'snapshot' | 'plate' | 'album';
+
+interface Props {
+  shape?: FrameShape;
+  image?: ImageMetadata;
+  alt?: string;
+  /** CSS aspect-ratio, e.g. "4 / 5". Ignored for "round". */
+  ratio?: string;
+  /** Placeholder tint while there is no photo. */
+  tone?: string;
+  label?: string;
+  tilt?: number;
+  /** Responsive sizes hint for the browser. */
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+}
+
+const {
+  shape = 'plate',
+  image,
+  alt = '',
+  ratio = '4 / 5',
+  tone = 'var(--tone-sage)',
+  label = '[ photo ]',
+  tilt = 0,
+  sizes = '(min-width: 900px) 40vw, 92vw',
+  eager = false,
+  class: cls = '',
+} = Astro.props;
+
+const aspect = shape === 'round' ? '1 / 1' : ratio;
+
+// Crop to the frame's shape at build time, so the browser never has to
+// stretch a smaller file to fill the window (which makes photos look soft).
+const [rw, rh] = aspect.split('/').map((n) => parseFloat(n));
+const MAX_W = 1800;
+const cropW = image ? Math.min(MAX_W, image.width, Math.floor(image.height * (rw / rh))) : 0;
+const cropH = Math.round(cropW * (rh / rw));
+const widths = [480, 800, 1200, 1800].filter((w) => w < cropW).concat(cropW);
+---
+<div class:list={['frame', `frame--${shape}`, cls]} style={`--tilt:${tilt}deg; --ratio:${aspect}; --tone:${tone}`}>
+  {(shape === 'polaroid' || shape === 'snapshot') && <span class="tape" aria-hidden="true"></span>}
+  {shape === 'album' && (
+    <>
+      <span class="corner tl" aria-hidden="true"></span><span class="corner tr" aria-hidden="true"></span>
+      <span class="corner bl" aria-hidden="true"></span><span class="corner br" aria-hidden="true"></span>
+    </>
+  )}
+  <div class="frame__window">
+    {image ? (
+      <Image
+        src={image}
+        alt={alt}
+        width={cropW}
+        height={cropH}
+        fit="cover"
+        position="center"
+        widths={widths}
+        sizes={sizes}
+        quality={88}
+        loading={eager ? 'eager' : 'lazy'}
+        class="frame__img fade-in"
+      />
+    ) : (
+      <div class="frame__img ph" role="img" aria-label="Photograph coming soon">
+        <span>{label}</span>
+      </div>
+    )}
+  </div>
+</div>
+
+<style>
+  .frame { position: relative; transform: rotate(var(--tilt)); width: 100%; }
+  .frame__window { position: relative; overflow: hidden; }
+  .frame__img {
+    width: 100%; aspect-ratio: var(--ratio); height: auto; object-fit: cover;
+    background-color: var(--tone);
+  }
+
+  /* cottage window */
+  .frame--arch { border: 2px solid var(--ink); border-radius: 999px 999px 12px 12px; padding: 12px; background: var(--print-white); }
+  .frame--arch .frame__window { border-radius: 999px 999px 4px 4px; }
+
+  /* cameo oval + round */
+  .frame--oval, .frame--round { border: 2px solid var(--ink); border-radius: 50%; padding: 9px; background: var(--print-white); }
+  .frame--oval .frame__window, .frame--round .frame__window { border-radius: 50%; }
+
+  /* postage stamp */
+  .frame--stamp {
+    padding: 16px; filter: drop-shadow(3px 4px 0 rgba(59, 42, 30, 0.14));
+    background:
+      radial-gradient(circle at 8px 8px, var(--parchment) 5px, transparent 5.6px) -8px -8px / 16px 16px,
+      var(--print-white);
+  }
+  .frame--stamp .frame__window { border: 1px solid var(--ink); }
+
+  /* polaroid & taped snapshot */
+  .frame--polaroid { background: var(--print-white); padding: 14px 14px 48px; border: 1px solid rgba(59, 42, 30, 0.2); box-shadow: var(--shadow-print); }
+  .frame--snapshot { background: var(--print-white); padding: 16px; border: 1px solid rgba(59, 42, 30, 0.25); box-shadow: var(--shadow-print); }
+  .tape {
+    position: absolute; z-index: 1; top: -13px; left: 50%; width: 96px; height: 26px; margin-left: -48px;
+    background: rgba(221, 184, 114, 0.72); transform: rotate(4deg);
+  }
+  .frame--snapshot .tape { left: 18px; margin-left: 0; width: 72px; background: rgba(169, 188, 196, 0.75); transform: rotate(-8deg); }
+
+  /* botanical plate: double rule */
+  .frame--plate { padding: 10px; border: 1px solid var(--ink); outline: 1px solid var(--ink); outline-offset: 5px; background: var(--page); }
+
+  /* album with photo corners */
+  .frame--album { padding: 10px; background: var(--night); }
+  .corner { position: absolute; z-index: 1; width: 34px; height: 34px; background: var(--ink); }
+  .tl { left: -6px; top: -6px; clip-path: polygon(0 0, 100% 0, 0 100%); }
+  .tr { right: -6px; top: -6px; clip-path: polygon(0 0, 100% 0, 100% 100%); }
+  .bl { left: -6px; bottom: -6px; clip-path: polygon(0 0, 0 100%, 100% 100%); }
+  .br { right: -6px; bottom: -6px; clip-path: polygon(100% 0, 100% 100%, 0 100%); }
+</style>

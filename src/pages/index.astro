@@ -1,0 +1,361 @@
+---
+import { Image } from 'astro:assets';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import portrait from '../assets/bio.jpg';
+import heroPhoto from '../assets/hero.jpg';
+import Frame, { type FrameShape } from '../components/Frame.astro';
+import Ornament from '../components/Ornament.astro';
+import Postcard from '../components/Postcard.astro';
+import MoonPhases from '../components/MoonPhases.astro';
+import { getChapters, tone, FRAME_CYCLE } from '../lib/chapters';
+import { site, url, roman, numberWord } from '../site.config';
+
+const chapters = await getChapters();
+const featured = chapters.find((c) => c.data.featured) ?? chapters[0];
+
+// Favourite plates: the first photo of each chapter, topped up with placeholders.
+type Plate = { image?: any; alt: string; caption: string; shape: FrameShape; ratio: string; href?: string };
+const plates: Plate[] = chapters
+  .filter((c) => c.data.photos.length)
+  .slice(0, 6)
+  .map((c, i) => {
+    const p = c.data.photos[0];
+    return {
+      image: p.src,
+      alt: p.alt,
+      caption: p.title ?? c.data.title,
+      shape: p.frame ?? FRAME_CYCLE[i % FRAME_CYCLE.length],
+      ratio: p.orientation === 'landscape' ? '3 / 2' : p.orientation === 'square' ? '1 / 1' : '4 / 5',
+      href: url(`chapters/${c.id}/`),
+    };
+  });
+const placeholderRatios = ['1 / 1', '3 / 4', '3 / 4', '3 / 2', '4 / 5', '4 / 5'];
+while (plates.length < 6) {
+  const i = plates.length;
+  plates.push({ alt: '', caption: '[caption]', shape: FRAME_CYCLE[i], ratio: placeholderRatios[i] });
+}
+const plateLayout = [
+  { width: 280, tilt: -3, offset: 0 },
+  { width: 240, tilt: 0, offset: 24 },
+  { width: 260, tilt: 0, offset: 0 },
+  { width: 340, tilt: 0, offset: 16 },
+  { width: 250, tilt: 0, offset: 0 },
+  { width: 260, tilt: 2.5, offset: 40 },
+];
+const vignettes = chapters.flatMap((c) => c.data.photos.map((p) => ({ src: p.src, alt: p.alt }))).slice(1, 4);
+---
+<BaseLayout>
+  <!-- ============ COVER ============ -->
+  <section class="hero wrap">
+    <div class="hero__text">
+      <div class="caps kicker"><Ornament name="sprig" /> {site.volume}</div>
+      <h1>Once upon<br />a roll <em>of film</em>…</h1>
+      <p class="dropcap lede">
+        Gathered here are small moments, each one waited for, wound on, and brought up slowly in the dark.
+        Every series is a little chapter. Turn the pages gently, the way you would an old storybook.
+      </p>
+      <div class="hero__actions">
+        <a class="btn" href="#contents">Open the book <Ornament name="arrow" color="var(--print-white)" /></a>
+        <a class="hand" href="#darkroom">who made this? →</a>
+      </div>
+    </div>
+
+    <div class="hero__art">
+      <div class="hero__window">
+        <Ornament name="moth" class="moth night-only" />
+        <Ornament name="vine" class="vine" />
+        <Ornament name="star" size={60} class="star star--big" />
+        <Ornament name="star" size={22} color="var(--toadstool)" class="star star--small" />
+        <Frame
+          shape="arch"
+          image={heroPhoto}
+          alt={site.hero.alt}
+          eager
+          sizes="(min-width: 900px) 430px, 88vw"
+        />
+        <div class="tag hand">
+          Plate I · {site.hero.title}<br />
+          <span>{site.hero.note}</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider" aria-hidden="true">
+    <span></span>
+    <Ornament name="flourish" class="day-only" />
+    <MoonPhases class="night-only phases" />
+    <span></span>
+  </div>
+
+  <!-- ============ CONTENTS ============ -->
+  <section id="contents" class="contents wrap">
+    <div class="contents__list">
+      <h2 class="section-title">Contents</h2>
+      <p class="hand-accent sub">each chapter is one roll, or one little series</p>
+      {chapters.length === 0 && <p>The first chapter is still in the developing tank.</p>}
+      <ol>
+        {chapters.map((c) => (
+          <li>
+            <a class="toc-row" href={url(`chapters/${c.id}/`)}>
+              <span class="toc-num">{roman(c.data.number)}.</span>
+              <span class="toc-title">{c.data.title}</span>
+              <span class="leader" aria-hidden="true"></span>
+              <span class="toc-exp">{c.data.exposures ? `${c.data.exposures} exp.` : ''}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </div>
+    <div class="vignettes" aria-hidden={vignettes.length ? undefined : 'true'}>
+      <Ornament name="constellation" class="night-only v-stars" />
+      <div class="v v1"><Frame shape="oval" image={vignettes[0]?.src} alt={vignettes[0]?.alt} tone={tone(1)} ratio="4 / 5" sizes="250px" /></div>
+      <div class="v v2"><Frame shape="round" image={vignettes[1]?.src} alt={vignettes[1]?.alt} tone={tone(2)} sizes="210px" /></div>
+      <div class="v v3"><Frame shape="round" image={vignettes[2]?.src} alt={vignettes[2]?.alt} tone={tone(3)} sizes="200px" /></div>
+      <Ornament name="mushroom" class="v-mushroom" />
+    </div>
+  </section>
+
+  <!-- ============ OPEN BOOK ============ -->
+  {featured && (
+    <section class="spread-wrap">
+      <p class="hand-accent now"><span class="day-only">now reading —</span><span class="night-only">now reading, by candlelight —</span></p>
+      <div class="spread">
+        <article class="page">
+          <span class="caps accent">Chapter {numberWord(featured.data.number)}</span>
+          <h3>{featured.data.title}</h3>
+          <Ornament name="rule" />
+          <p class="dropcap">{featured.data.summary ?? '[A few lines about this roll — where you were, what the light was doing, why you kept pressing the shutter.]'}</p>
+          <dl class="facts">
+            {featured.data.roll.camera && (<><dt>Camera</dt><dd>{featured.data.roll.camera}</dd></>)}
+            {featured.data.roll.film && (<><dt>Film</dt><dd>{featured.data.roll.film}</dd></>)}
+            {featured.data.place && (<><dt>Place</dt><dd>{featured.data.place}</dd></>)}
+            {featured.data.season && (<><dt>Season</dt><dd>{featured.data.season}</dd></>)}
+          </dl>
+          <a class="turn" href={url(`chapters/${featured.id}/`)}>Turn the page &amp; read the whole chapter →</a>
+          <span class="folio" aria-hidden="true">— {featured.data.number * 8 - 1} —</span>
+        </article>
+        <figure class="page page--plate">
+          <div class="plate">
+            <Frame
+              shape="plate"
+              image={featured.data.photos[0]?.src ?? featured.data.cover}
+              alt={featured.data.photos[0]?.alt ?? featured.data.coverAlt}
+              tone="var(--tone-moss)"
+              label="[ plate photograph ]"
+              sizes="(min-width: 900px) 420px, 88vw"
+            />
+          </div>
+          <figcaption>
+            <span class="caps">Plate {roman(featured.data.number * 4)}.</span>
+            <span class="plate-title">
+              {featured.data.photos[0]?.title ?? '[photo title]'}
+              {featured.data.roll.film && <> · <span class="accent">{featured.data.roll.film}</span></>}
+            </span>
+          </figcaption>
+          <Ornament name="candle" class="night-only candle" />
+          <span class="folio day-only" aria-hidden="true">— {featured.data.number * 8} —</span>
+        </figure>
+      </div>
+    </section>
+  )}
+
+  <!-- ============ PLATES ============ -->
+  <section id="plates" class="plates wrap">
+    <div class="section-head">
+      <h2 class="section-title">A Few Favourite Plates</h2>
+      <p class="hand-accent"><span class="day-only">pressed between the pages for safekeeping</span><span class="night-only">laid out on the table under the moon</span></p>
+    </div>
+    <div class="plates__grid">
+      {plates.map((p, i) => {
+        const l = plateLayout[i];
+        const inner = (
+          <>
+            <Frame shape={p.shape} image={p.image} alt={p.alt} ratio={p.ratio} tone={tone(i + 1)} label="" sizes={`${l.width}px`} />
+            <figcaption class="hand">{p.caption}</figcaption>
+          </>
+        );
+        return (
+          <figure class="plate-item" style={`width:${l.width}px; margin-top:${l.offset}px; transform:rotate(${l.tilt}deg)`}>
+            {p.href ? <a href={p.href} class="plate-link">{inner}</a> : inner}
+          </figure>
+        );
+      })}
+    </div>
+  </section>
+
+  <!-- ============ THE DARKROOM ============ -->
+  <section id="darkroom" class="darkroom">
+    <div class="darkroom__inner">
+      <div class="portrait">
+        <svg class="wreath" viewBox="0 0 400 400" fill="none" stroke="var(--ring)" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="200" cy="200" r="190" stroke-dasharray="2 8" /><path d="M60 330q-10-30 10-50 10 25-10 50zM40 270q-20-20-10-48 20 18 10 48zM40 200q-22-12-20-40 22 12 20 40z" fill="var(--leaf)" /><path d="M340 330q10-30-10-50-10 25 10 50zM360 270q20-20 10-48-20 18-10 48zM360 200q22-12 20-40-22 12-20 40z" fill="var(--leaf)" /><circle class="night-only" cx="200" cy="12" r="12" fill="var(--honey)" opacity="0.18" stroke="none" /><circle cx="200" cy="12" r="7" fill="var(--honey)" stroke="none" /></svg>
+        <div class="portrait__mat">
+          <Image
+            src={portrait}
+            alt="Amy taking a mirror self-portrait with a Nikon film camera"
+            width={1200}
+            height={1200}
+            fit="cover"
+            position="center"
+            widths={[400, 800, 1200]}
+            sizes="(max-width: 420px) 88vw, 360px"
+            quality={88}
+            class="portrait__img fade-in"
+          />
+        </div>
+      </div>
+      <div class="darkroom__text">
+        <span class="caps honey">The Darkroom</span>
+        <h2>{site.about.greeting}</h2>
+        <p class="bio">{site.about.bio}</p>
+        <p class="hand carrying">{site.about.carrying}</p>
+        <div class="darkroom__links">
+          {site.links.stocksy && <a class="btn-ghost" href={site.links.stocksy}>Licensing on Stocksy ↗</a>}
+          <a class="commission" href="#letters">Commissions &amp; prints</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ LETTERS ============ -->
+  <section id="letters" class="letters">
+    <div class="section-head">
+      <h2 class="section-title">Send a Letter</h2>
+      <p class="hand-accent"><span class="day-only">for prints, commissions, or just to say hello</span><span class="night-only">by owl, or by the button below</span></p>
+    </div>
+    <Postcard />
+  </section>
+</BaseLayout>
+
+<style>
+  /* cover */
+  .hero { padding-top: 48px; padding-bottom: 72px; display: flex; flex-wrap: wrap; gap: 56px; align-items: center; }
+  .hero__text { flex: 1 1 440px; min-width: 0; }
+  .kicker { display: flex; align-items: center; gap: 12px; color: var(--ink-soft); }
+  h1 {
+    margin: 18px 0 0; font-family: var(--font-display); font-weight: 400;
+    font-size: clamp(54px, 7vw, 100px); line-height: 0.98; letter-spacing: -0.01em;
+  }
+  h1 em { color: var(--accent); }
+  .lede { margin: 32px 0 0; max-width: 520px; font-size: 21px; }
+  .hero__actions { display: flex; flex-wrap: wrap; gap: 18px 28px; align-items: center; margin-top: 36px; }
+  .hero__actions .hand { padding: 8px 0; }
+  .hero__art { flex: 1 1 420px; min-width: 0; display: flex; justify-content: center; padding: 30px 0; }
+  .hero__window { position: relative; width: min(460px, 100%); }
+  .hero__window :global(.frame--arch) { background: var(--parchment-deep); padding: 14px; box-shadow: 8px 10px 0 rgba(59, 42, 30, 0.12); }
+  .hero__window :global(.vine) { position: absolute; left: -48px; top: -36px; z-index: 1; }
+  .hero__window :global(.star--big) { position: absolute; right: -20px; top: 8px; z-index: 1; }
+  .hero__window :global(.star--small) { position: absolute; right: 40px; top: -18px; }
+  /* night: the moon rising behind the window, and a resting moth */
+  .hero__window :global(.moth) { position: absolute; right: -36px; bottom: 120px; z-index: 2; transform: rotate(14deg); }
+  .hero__window :global(.frame--arch) { position: relative; }
+  @media (max-width: 560px) {
+    .hero__window :global(.moth) { right: -8px; }
+  }
+  .divider :global(.phases) { max-width: 60vw; height: auto; }
+  /* night: the little constellation sits beneath the photos */
+  .vignettes :global(.v-stars) { position: absolute; left: 50%; bottom: 0; transform: translateX(-50%); }
+  :global(html[data-theme='night']) .vignettes { height: 650px; }
+  :global(html[data-theme='night']) .v3 { bottom: 130px; }
+  .page--plate :global(.candle) { margin-top: auto; }
+
+  .tag {
+    position: absolute; left: -26px; bottom: 56px; z-index: 2; transform: rotate(-6deg);
+    background: var(--print-white); border: 1.5px solid var(--ink); border-radius: 6px 22px 22px 6px;
+    padding: 8px 26px 8px 16px; font-size: 22px; line-height: 1.15; box-shadow: 3px 3px 0 rgba(59, 42, 30, 0.15);
+  }
+  .tag span { color: var(--accent); }
+  @media (max-width: 560px) {
+    .hero__window :global(.vine) { left: -20px; width: 90px; height: 116px; }
+    .tag { left: -8px; }
+  }
+
+  .divider { display: flex; align-items: center; justify-content: center; gap: 18px; padding: 0 24px; }
+  .divider span { flex: 0 1 260px; height: 1px; background: var(--ink); opacity: 0.4; }
+
+  /* contents */
+  .contents { padding-top: 80px; padding-bottom: 80px; display: flex; flex-wrap: wrap; gap: 56px 72px; align-items: flex-start; }
+  .contents__list { flex: 1 1 560px; min-width: 0; }
+  .sub { margin: 10px 0 34px; }
+  ol { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .toc-row { display: flex; align-items: baseline; gap: 16px; padding: 12px 0; text-decoration: none; }
+  .toc-num { flex: 0 0 52px; font-family: var(--font-caps); font-size: 22px; color: var(--accent); }
+  .toc-title { font-family: var(--font-display); font-style: italic; font-size: 28px; line-height: 1.2; }
+  .toc-row:hover .toc-title { color: var(--accent); }
+  .leader { flex: 1 1 40px; min-width: 24px; border-bottom: 2px dotted rgba(59, 42, 30, 0.45); transform: translateY(-6px); }
+  .toc-exp { font-size: 17px; letter-spacing: 0.06em; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .toc-title { font-size: 23px; }
+    .toc-num { flex-basis: 40px; }
+  }
+  .vignettes { flex: 0 1 420px; width: 100%; max-width: 420px; margin: 0 auto; position: relative; height: 520px; }
+  .v { position: absolute; }
+  .v1 { left: 0; top: 10px; width: 250px; transform: rotate(-4deg); }
+  .v2 { right: 0; top: 150px; width: 210px; transform: rotate(5deg); }
+  .v3 { left: 70px; bottom: 0; width: 200px; }
+  .vignettes :global(.v-mushroom) { position: absolute; right: 30px; top: 20px; }
+  @media (max-width: 460px) {
+    .vignettes { height: 420px; }
+    :global(html[data-theme='night']) .vignettes { height: 540px; }
+    .v1 { width: 200px; } .v2 { width: 160px; top: 130px; } .v3 { width: 160px; left: 30px; }
+  }
+
+  /* open book */
+  .spread-wrap { padding: 40px 24px 96px; }
+  .now { text-align: center; margin: 0 0 36px; }
+  .spread {
+    max-width: 1180px; margin: 0 auto; display: flex; flex-wrap: wrap;
+    background: var(--page); border: 1.5px solid var(--ink); border-radius: 6px 6px 18px 18px;
+    box-shadow: 0 2px 0 var(--parchment-deep), 0 6px 0 var(--ink), 0 10px 0 var(--parchment-deep), 0 14px 0 var(--ink), 0 30px 50px rgba(59, 42, 30, 0.18);
+  }
+  .page { flex: 1 1 440px; min-width: 0; margin: 0; padding: clamp(32px, 5vw, 72px); display: flex; flex-direction: column; gap: 18px; }
+  .page:first-child { border-right: 1px solid rgba(59, 42, 30, 0.25); }
+  .page--plate { align-items: center; gap: 20px; }
+  .accent { color: var(--accent); }
+  h3 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(38px, 4vw, 54px); line-height: 1.05; }
+  .page .dropcap { margin: 0; font-size: 20px; }
+  .facts { margin: 12px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 22px; font-size: 18px; }
+  .facts dt { font-family: var(--font-caps); letter-spacing: 0.08em; }
+  .facts dd { margin: 0; font-style: italic; }
+  .turn { margin-top: auto; padding-top: 18px; font-family: var(--font-display); font-style: italic; font-size: 22px; }
+  .folio { text-align: center; font-size: 16px; letter-spacing: 0.2em; color: var(--ink-soft); }
+  .page--plate .folio { margin-top: auto; }
+  .plate { width: 100%; max-width: 420px; }
+  figcaption { text-align: center; margin-top: 8px; }
+  figcaption .caps { display: block; letter-spacing: 0.2em; }
+  .plate-title { font-family: var(--font-display); font-style: italic; font-size: 22px; }
+
+  /* plates */
+  .plates { padding-top: 72px; padding-bottom: 96px; }
+  .plates__grid { display: flex; flex-wrap: wrap; justify-content: center; align-items: flex-start; gap: 64px 56px; }
+  .plate-item { margin: 0; max-width: 100%; }
+  .plate-item figcaption { font-size: 24px; padding-top: 10px; }
+  .plate-link { display: block; text-decoration: none; transition: transform 0.25s ease; }
+  .plate-link:hover { transform: translateY(-4px) rotate(-1deg); }
+
+  /* darkroom */
+  .darkroom { background: var(--ink); color: var(--parchment); }
+  .darkroom__inner {
+    max-width: 1180px; margin: 0 auto; padding: 96px 24px;
+    display: flex; flex-wrap: wrap; gap: 56px 80px; align-items: center;
+  }
+  .portrait { flex: 0 1 360px; width: 100%; max-width: 360px; margin: 34px auto; position: relative; }
+  .wreath { position: absolute; inset: -34px; width: calc(100% + 68px); height: calc(100% + 68px); }
+  .portrait__mat {
+    position: relative; aspect-ratio: 1 / 1; overflow: hidden;
+    border-radius: 50%; border: 2px solid var(--parchment);
+  }
+  .portrait__img { width: 100%; height: 100%; object-fit: cover; }
+  .darkroom__text { flex: 1 1 480px; min-width: 0; }
+  .honey { color: var(--honey-light); }
+  .darkroom h2 { margin: 12px 0 20px; font-family: var(--font-display); font-weight: 400; font-size: clamp(44px, 5vw, 66px); line-height: 1.02; }
+  .bio { margin: 0 0 18px; font-size: 21px; max-width: 560px; }
+  .carrying { margin: 0 0 28px; color: var(--honey-light); font-size: 26px; }
+  .darkroom a { color: var(--parchment); }
+  .darkroom a:hover { color: var(--honey-light); }
+  .darkroom__links { display: flex; flex-wrap: wrap; gap: 14px 24px; align-items: center; }
+  .commission { font-family: var(--font-display); font-style: italic; font-size: 20px; padding: 12px 0; }
+
+  /* letters */
+  .letters { max-width: 1100px; margin: 0 auto; padding: 100px 24px 80px; }
+</style>

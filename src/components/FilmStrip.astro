@@ -1,0 +1,45 @@
+---
+// The whole roll as a scrollable contact strip, with sprocket holes and edge print.
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+
+interface Props {
+  frames: { src?: ImageMetadata; alt: string; tone?: string }[];
+  film?: string;
+  startAt?: number;
+}
+const { frames, film, startAt = 1 } = Astro.props;
+const edge = (film ?? '').toUpperCase();
+---
+<div class="strip" tabindex="0" role="region" aria-label="Every frame on the roll — scrolls sideways">
+  <div class="strip__film">
+    <div class="sprockets" aria-hidden="true"></div>
+    <ol class="frames">
+      {frames.map((f, i) => (
+        <li>
+          {f.src ? (
+            <Image src={f.src} alt={f.alt} widths={[240, 420]} sizes="210px" loading="lazy" class="cell" />
+          ) : (
+            <div class="cell ph" style={`background-color:${f.tone ?? 'var(--tone-sage)'}`} aria-hidden="true"></div>
+          )}
+          <span class="edge" aria-hidden="true">▸ {startAt + i}{i % 2 ? 'A' : ''}{i % 2 === 0 && edge ? `  ${edge}` : ''}</span>
+        </li>
+      ))}
+    </ol>
+    <div class="sprockets" aria-hidden="true"></div>
+  </div>
+</div>
+
+<style>
+  .strip { overflow-x: auto; padding: 0 var(--gutter) 12px; scrollbar-width: thin; scrollbar-color: var(--honey-light) transparent; }
+  .strip:focus-visible { outline-offset: -4px; }
+  .strip__film { display: inline-flex; flex-direction: column; gap: 8px; background: var(--night-deep); padding: 10px 0; min-width: 100%; }
+  .sprockets {
+    height: 14px; margin: 0 6px; opacity: 0.9;
+    background: repeating-linear-gradient(90deg, transparent 0 10px, var(--parchment) 10px 22px, transparent 22px 34px);
+  }
+  .frames { list-style: none; margin: 0; padding: 0 12px; display: flex; gap: 12px; }
+  .frames li { flex: 0 0 210px; display: flex; flex-direction: column; gap: 8px; }
+  .cell { width: 210px; height: 140px; object-fit: cover; opacity: 0.92; }
+  .edge { font-family: var(--font-type); font-size: 14px; color: var(--edge-print); letter-spacing: 0.1em; white-space: pre; }
+</style>

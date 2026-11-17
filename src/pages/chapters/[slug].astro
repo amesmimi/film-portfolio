@@ -1,0 +1,202 @@
+---
+import type { GetStaticPaths } from 'astro';
+import { render } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import Frame, { type FrameShape } from '../../components/Frame.astro';
+import Ornament from '../../components/Ornament.astro';
+import RollCard from '../../components/RollCard.astro';
+import FilmStrip from '../../components/FilmStrip.astro';
+import { getChapters, tone, type Chapter } from '../../lib/chapters';
+import { url, roman, numberWord } from '../../site.config';
+
+export const getStaticPaths = (async () => {
+  const chapters = await getChapters();
+  return chapters.map((chapter, i) => ({
+    params: { slug: chapter.id },
+    props: { chapter, prev: chapters[i - 1], next: chapters[i + 1] },
+  }));
+}) satisfies GetStaticPaths;
+
+interface Props { chapter: Chapter; prev?: Chapter; next?: Chapter }
+const { chapter, prev, next } = Astro.props;
+const { data } = chapter;
+const { Content } = await render(chapter);
+
+// Real photos, or placeholders while the roll is still being scanned.
+type Plate = { src?: any; alt: string; title?: string; frame?: FrameShape; orientation: string };
+const real: Plate[] = data.photos;
+const plates: Plate[] = real.length
+  ? real
+  : Array.from({ length: 6 }, (_, i) => ({ alt: '', title: '[title]', orientation: i === 0 ? 'landscape' : 'portrait' }));
+
+const ratioOf = (p: Plate) => (p.orientation === 'landscape' ? '3 / 2' : p.orientation === 'square' ? '1 / 1' : '4 / 5');
+const plateNo = (i: number) => roman(data.number * 4 + i - 1);
+
+const [lead, pairA, pairB, ...rest] = plates;
+const restShapes: FrameShape[] = ['oval', 'plate', 'arch'];
+const stripFrames = (real.length ? real : Array.from({ length: 8 }, () => ({ alt: '' } as Plate))).map((p, i) => ({
+  src: p.src,
+  alt: p.alt,
+  tone: tone(i),
+}));
+---
+<BaseLayout title={data.title} description={data.summary} compactHeader>
+  <nav class="crumbs wrap" aria-label="Chapter">
+    <a href={`${url()}#contents`}>← back to Contents</a>
+    <a href="#roll">The whole roll</a>
+  </nav>
+
+  <!-- title page -->
+  <header class="title-page">
+    <div class="badge">
+      <svg class="badge__ring" width="190" height="190" viewBox="0 0 190 190" fill="none" stroke="var(--moss)" stroke-width="1.4" stroke-linecap="round" aria-hidden="true"><circle cx="95" cy="95" r="80" /><circle cx="95" cy="95" r="72" stroke-dasharray="1 7" /><path d="M95 6q8 6 0 14-8-8 0-14zM95 170q8 6 0 14-8-8 0-14zM6 95q6-8 14 0-8 8-14 0zM170 95q6-8 14 0-8 8-14 0z" fill="var(--tone-sage)" /></svg>
+      <span aria-hidden="true">{roman(data.number)}</span>
+    </div>
+    <span class="caps">Chapter {numberWord(data.number)}</span>
+    <h1>{data.title}</h1>
+    <p class="hand-accent meta">
+      {[data.place ?? '[place]', data.season ?? '[season, year]', data.exposures ? `${data.exposures} exposures` : null].filter(Boolean).join(' · ')}
+    </p>
+  </header>
+
+  <!-- opening text + roll card -->
+  <section class="opening wrap">
+    <div class="prose">
+      <Content />
+    </div>
+    <RollCard roll={data.roll} fallbackNumber={data.number} />
+  </section>
+
+  <!-- lead plate -->
+  {lead && (
+    <figure class="lead">
+      <Frame shape={lead.frame ?? 'plate'} image={lead.src} alt={lead.alt} ratio={ratioOf(lead)} tone="var(--tone-moss)" label="[ a wide landscape frame ]" sizes="(min-width: 1200px) 1140px, 94vw" eager />
+      <figcaption><span class="caps">Plate {plateNo(1)}.</span> <i>{lead.title ?? ''}</i></figcaption>
+    </figure>
+  )}
+
+  <!-- pair with a margin note -->
+  {pairA && (
+    <section class="pair wrap">
+      <figure class="pair__a">
+        <Frame shape={pairA.frame ?? 'arch'} image={pairA.src} alt={pairA.alt} ratio={ratioOf(pairA)} tone="var(--tone-peach)" label="" sizes="(min-width: 900px) 520px, 92vw" />
+        <figcaption><i>Plate {plateNo(2)}. {pairA.title ?? ''}</i></figcaption>
+      </figure>
+      {pairB && (
+        <figure class="pair__b">
+          {(data.aside || !real.length) && (
+            <p class="aside hand-accent">
+              {data.aside ?? '[a little handwritten aside about this frame]'}
+              <svg width="60" height="40" viewBox="0 0 60 40" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M4 4c10 20 30 28 50 28" /><path d="M46 24l8 8-10 4" /></svg>
+            </p>
+          )}
+          <Frame shape={pairB.frame ?? 'polaroid'} image={pairB.src} alt={pairB.alt} ratio={ratioOf(pairB)} tone="var(--tone-rose)" label="" tilt={2} sizes="(min-width: 900px) 440px, 92vw" />
+          <figcaption><i>Plate {plateNo(3)}. {pairB.title ?? ''}</i></figcaption>
+        </figure>
+      )}
+    </section>
+  )}
+
+  <!-- interlude -->
+  {(data.quote || !real.length) && (
+    <section class="interlude">
+      <Ornament name="flourish" size={120} />
+      <p>“{data.quote ?? '[A quiet line in the middle of the chapter, to let the reader breathe.]'}”</p>
+    </section>
+  )}
+
+  <!-- the rest -->
+  {rest.length > 0 && (
+    <section class="rest wrap">
+      {rest.map((p, i) => (
+        <figure>
+          <Frame shape={p.frame ?? restShapes[i % 3]} image={p.src} alt={p.alt} ratio={ratioOf(p)} tone={tone(i + 2)} label="" sizes="(min-width: 900px) 380px, 92vw" />
+          <figcaption class="hand">{roman(data.number * 4 + i + 3)}. {p.title ?? ''}</figcaption>
+        </figure>
+      ))}
+    </section>
+  )}
+
+  <!-- whole roll -->
+  <section id="roll" class="roll">
+    <div class="roll__head wrap">
+      <h2>The whole roll</h2>
+      <span class="hand">every frame, the misfires too — scroll along →</span>
+    </div>
+    <FilmStrip frames={stripFrames} film={data.roll.film} startAt={12} />
+  </section>
+
+  <!-- turn the page -->
+  <nav class="turn wrap" aria-label="Chapters">
+    {prev ? (
+      <a href={url(`chapters/${prev.id}/`)} class="turn__link">
+        <span class="caps">← Chapter {roman(prev.data.number)}</span>
+        <span class="turn__title">{prev.data.title}</span>
+      </a>
+    ) : (
+      <a href={`${url()}#contents`} class="turn__link">
+        <span class="caps">← Back to</span>
+        <span class="turn__title">the Contents</span>
+      </a>
+    )}
+    <Ornament name="book" />
+    {next ? (
+      <a href={url(`chapters/${next.id}/`)} class="turn__link turn__link--next">
+        <span class="caps accent">Chapter {roman(next.data.number)} →</span>
+        <span class="turn__title">{next.data.title}</span>
+      </a>
+    ) : (
+      <a href={`${url()}#letters`} class="turn__link turn__link--next">
+        <span class="caps accent">That’s all for now →</span>
+        <span class="turn__title">Send a letter</span>
+      </a>
+    )}
+  </nav>
+</BaseLayout>
+
+<style>
+  .crumbs { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0 26px; font-family: var(--font-display); font-style: italic; font-size: 20px; }
+  .crumbs a { text-decoration: none; padding: 12px 0; }
+
+  .title-page { max-width: 900px; margin: 0 auto; padding: 72px 24px; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 18px; }
+  .badge { position: relative; width: 190px; height: 190px; display: flex; align-items: center; justify-content: center; }
+  .badge__ring { position: absolute; inset: 0; }
+  .badge span { font-family: var(--font-display); font-size: 84px; line-height: 1; color: var(--accent); }
+  h1 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(50px, 7vw, 92px); line-height: 1; }
+  .meta { margin: 6px 0 0; font-size: 27px; }
+
+  .opening { max-width: 1148px; padding-bottom: 96px; display: flex; flex-wrap: wrap; gap: 48px 72px; align-items: flex-start; }
+  .prose { flex: 1 1 480px; min-width: 0; font-size: 22px; line-height: 1.65; }
+
+  .lead { max-width: 1180px; margin: 0 auto; padding: 0 24px 96px; }
+  .lead :global(.frame--plate) { padding: 12px; outline-offset: 6px; }
+  figcaption { text-align: center; margin-top: 18px; font-family: var(--font-display); font-size: 21px; }
+  .lead figcaption { margin-top: 24px; font-size: 22px; }
+  .lead .caps { font-size: 16px; }
+
+  .pair { max-width: 1228px; padding-bottom: 96px; display: flex; flex-wrap: wrap; gap: 48px; align-items: flex-end; justify-content: center; }
+  .pair figure { margin: 0; min-width: 0; }
+  .pair__a { flex: 1 1 380px; max-width: 520px; }
+  .pair__b { flex: 1 1 320px; max-width: 440px; }
+  .aside { margin: 0 0 18px; font-size: 26px; line-height: 1.25; transform: rotate(-2deg); }
+  .aside svg { display: block; margin: 6px 0 0 30px; }
+
+  .interlude { max-width: 760px; margin: 0 auto; padding: 0 24px 96px; text-align: center; }
+  .interlude p { margin: 20px 0 0; font-family: var(--font-display); font-style: italic; font-size: clamp(26px, 3vw, 36px); line-height: 1.35; }
+
+  .rest { max-width: 1228px; padding-bottom: 104px; display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 48px 40px; align-items: start; }
+  .rest figure { margin: 0; }
+  .rest figcaption { font-family: var(--font-hand); font-size: 23px; margin-top: 12px; }
+
+  .roll { background: var(--night); color: var(--parchment); padding: 72px 0 80px; }
+  .roll__head { padding-bottom: 28px; display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
+  .roll__head h2 { margin: 0; font-family: var(--font-display); font-weight: 400; font-size: clamp(36px, 4vw, 52px); }
+  .roll__head .hand { color: var(--honey-light); font-size: 24px; }
+
+  .turn { max-width: 1228px; padding-top: 88px; padding-bottom: 72px; display: flex; flex-wrap: wrap; gap: 32px; justify-content: space-between; align-items: center; }
+  .turn__link { display: flex; flex-direction: column; gap: 2px; text-decoration: none; padding: 10px 0; }
+  .turn__link--next { text-align: right; margin-left: auto; }
+  .turn__title { font-family: var(--font-display); font-style: italic; font-size: 28px; }
+  .turn .caps { font-size: 16px; }
+  .accent { color: var(--accent); }
+</style>
